@@ -33,6 +33,34 @@ def test_create_user(client):
     }
 
 
+def test_create_user_err_exist_username(client, user):
+    response = client.post(
+        "/users/",
+        json={
+            "username": "gabriel",
+            "email": "gabrielqieismeula@test.com",
+            "password": "fldkf;asjklsajfl;asdf",
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {"detail": "Username already exits"}
+
+
+def test_create_user_err_exist_email(client, user):
+    response = client.post(
+        "/users/",
+        json={
+            "username": "gdsadads",
+            "email": "gabriel@gabi.com",
+            "password": "fldkf;asjklsajfl;asdf",
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {"detail": "Email already exits"}
+
+
 def test_read_user(client):
     response = client.get("/users/")
     assert response.status_code == HTTPStatus.OK
@@ -56,8 +84,7 @@ def test_get_one_user(client, user):
     }
 
 
-""" 
-def test_update_user(client):
+def test_update_user(client, user):
     response = client.put(
         "/users/1",
         json={
@@ -72,7 +99,6 @@ def test_update_user(client):
         "email": "test@test.com",
         "id": 1,
     }
- """
 
 
 def test_delete_user(client, user):
@@ -82,22 +108,20 @@ def test_delete_user(client, user):
 
 
 def test_update_return_user_not_found(client):
-    response = client.put("/users/99")
-    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert response.json() == {
-        "detail": [
-            {
-                "type": "missing",
-                "loc": ["body"],
-                "msg": "Field required",
-                "input": None,
-            }
-        ]
-    }
+    response = client.put(
+        "/users/99",
+        json={
+            "username": "BoB",
+            "email": "test@test.com",
+            "password": "password",
+        },
+    )
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {"detail": "User not found"}
 
 
 def test_delete_return_user_not_found(client, user):
-    response = client.delete("/users/0")
+    response = client.delete("/users/9999999")
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {"detail": "User not found"}
 

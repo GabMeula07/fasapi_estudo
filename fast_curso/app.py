@@ -56,6 +56,10 @@ def get_user(
 @app.get("/users/{user_id}", response_model=UserPublic)
 def get_one_user(user_id: int, session: Session = Depends(get_session)):
     user = session.scalar(select(User).where(User.id == user_id))
+    if not user:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="User not found"
+        )
     return user
 
 
@@ -64,15 +68,16 @@ def update_user(
     user_id: int, user: UserSchema, session: Session = Depends(get_session)
 ):
     user_db = session.scalar(select(User).where(User.id == user_id))
+
     # Se o usuário não existir exponha um erro ao usuário
     if not user_db:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="User not found"
         )
-    user_db.email == user.email
-    user_db.username == user.username
-    user_db.password == user.password
 
+    user_db.email = user.email
+    user_db.username = user.username
+    user_db.password = user.password
     session.commit()
     session.refresh(user_db)
 
