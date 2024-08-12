@@ -130,3 +130,18 @@ def test_get_return_user_not_found(client, user):
     response = client.get("/users/0")
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {"detail": "User not found"}
+
+
+def test_create_token(client, user):
+    response = client.post(
+        "/token",
+        data={
+            "username": user.email,
+            "password": user.clean_password,
+        },
+    )
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert token["token_type"] == "Bearer"
+    assert "access_token" in token

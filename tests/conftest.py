@@ -7,14 +7,19 @@ from sqlalchemy.pool import StaticPool
 from fast_curso.app import app
 from fast_curso.database import get_session
 from fast_curso.models import User, table_registry
+from fast_curso.segurity import get_password_hash
 
 
 @pytest.fixture
 def user(session: Session):
-    user = User("gabriel", "fjkahsfjdkaslkfdsa", "gabriel@gabi.com")
+    pwd = "fjkahsfjdkaslkfdsa"
+    user = User("gabriel", get_password_hash(pwd), "gabriel@gabi.com")
     session.add(user)
     session.commit()
     session.refresh
+
+    user.clean_password = pwd
+
     return user
 
 

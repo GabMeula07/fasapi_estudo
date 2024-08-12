@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,6 +12,11 @@ from fast_curso.schemas import (
     UserList,
     UserPublic,
     UserSchema,
+)
+from fast_curso.segurity import (
+    create_access_token,
+    get_password_hash,
+    verify_password,
 )
 
 app = FastAPI()
@@ -37,7 +43,9 @@ def create_user(user: UserSchema, session=Depends(get_session)):
                 detail="Email already exits",
             )
     db_user = User(
-        username=user.username, email=user.email, password=user.password
+        username=user.username,
+        email=user.email,
+        password=get_password_hash(user.password),
     )
     session.add(db_user)
     session.commit()
@@ -77,7 +85,7 @@ def update_user(
 
     user_db.email = user.email
     user_db.username = user.username
-    user_db.password = user.password
+    user_db.password = get_password_hash(user.password)
     session.commit()
     session.refresh(user_db)
 
@@ -94,3 +102,19 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     session.delete(user_db)
     session.commit()
     return {"message": "User deleted"}
+
+
+@app.post("/token")
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),  # O tipo precisa ser respeitado, mas é só um form
+    session: Session = Depends(get_session),
+):
+    user = session.scalar(select(User).where(User.email == form_data.username))
+    if not user or not verify_password(form_data.password, user.password):
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="usuário ou senha inválidos",
+        )
+
+    access_token = create_access_token({"sub": user.email})
+    return {"access_token": access_token, "token_type": "Bearer"}
