@@ -145,3 +145,12 @@ def test_create_token(client, user):
     assert response.status_code == HTTPStatus.OK
     assert token["token_type"] == "Bearer"
     assert "access_token" in token
+
+
+def test_create_token_return_err(client, user):
+    response = client.post(
+        "/token", data={"username": user.username, "password": user.password}
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {"detail": "usuário ou senha inválidos"}
